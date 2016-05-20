@@ -29,10 +29,8 @@ This is a minimalistic effort; however watch this:
 
 The system uses several special variables to keep defaults which come in handy in interactive work:
 
-- \*acct*    structure contains server name, address, username and password, defaults to a free server
-- \*socket*  contains the usocket opened by most recent connect.
-
-Most functions can be called with :socket parameter; otherwise \*socket* will be used.  To get a stream, use (usocket:socket-stream socket).
+- \*acct*    structure contains server name, address, username and password (defaults to a free server).  Used in (connect) and (login).
+- \*socket*  contains the usocket opened by most recent connect.  Most functions use it if the :socket parameter is missing.
 
 Commands are sent with
     (send-command "commandstring" :expecting 2)
@@ -45,5 +43,14 @@ Responses are read with
 
 Lines are returned unprocessed, with control-M character.  Rationale: you will probably parse the lines anyway, so there is little reason to worry about that.
 
+*WORKFLOW*
 
-TODO: installable parsers?
+1. Create an acct structure with your server url, port and authentication info.
+2. (connect) to your server.
+3. (login) with your acct.
+4. (send-command ...) "MODE READER" is a good start.  If you send commands that return data, make sure to read everything up to and including the termination line containing a single dot.  See (read-list) for details.  If you don't you will get out of sync and send-command will not get a good response line.
+4. (disconnect) when done -- it sends "QUIT" and kills the socket.
+5. Write an news transport, a reader, a downloader, or anything that you are discouraged to do [in this article](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
+See:
+* 
+* [USOCKET API](http://quickdocs.org/usocket/api)
