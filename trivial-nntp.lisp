@@ -80,7 +80,6 @@
 
 (defun connect (&key (acct *acct*))
   (setf *socket* (usocket:socket-connect (acct-server acct) (acct-port acct)))
-  (read-response)
   )
 
 (defun login (&key (acct *acct*))

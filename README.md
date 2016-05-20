@@ -1,17 +1,10 @@
 # trivial-nntp
-Common lisp tools for connecting to and crawling around NNTP servers.
+Common lisp tools for connecting to and crawling around NNTP servers.  It uses usocket.
 
 This is a minimalistic effort; however watch this:
     
      CL-USER> (tnntp:connect)
-     2
-     "200 news.mixmin.net InterNetNews NNRP server INN 2.7.0 (20151105 prerelease) ready (posting ok)^M"
-     CL-USER> (tnntp:disconnect)
-     2
-     "205 Bye^M"
-     CL-USER> (tnntp:connect)
-     2
-     "200 news.mixmin.net InterNetNews NNRP server INN 2.7.0 (20151105 prerelease) ready (posting ok)^M"
+     #<USOCKET:STREAM-USOCKET {100E6BDDD3}>
      CL-USER> (tnntp:send-command "HELP")
      1
      "100 Legal commands^M"
@@ -33,3 +26,21 @@ This is a minimalistic effort; however watch this:
     2
     "205 Bye!^M"
     CL-USER>
+
+The system uses several special variables to keep defaults which come in handy in interactive work:
+*acct*    structure contains server name, address, username and password
+*socket*  contains the usocket opened by most recent connect.
+
+Most functions can be called with :socket parameter; otherwise *socket* will be used.
+
+Commands are sent with
+    (send-command "commandstring" :expecting 2)
+The expecting parameter, if specified, makes sure that the response in in 200-299 range (only first digit is checked).
+
+Response are read with
+(read-unit) - read one line
+(read-list) - read lines terminated by ".^M" into a list
+
+Lines are returned unprocessed, with control-M character.  Rationale: you will probably parse the lines anyway, so there is little reason to worry about that.
+
+TODO: installable parsers?
