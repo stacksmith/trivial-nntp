@@ -28,10 +28,10 @@ This is a minimalistic effort; however watch this:
     CL-USER>
 
 The system uses several special variables to keep defaults which come in handy in interactive work:
-```common-lisp
+
     *acct*    structure contains server name, address, username and password
     *socket*  contains the usocket opened by most recent connect.
-```
+
 Most functions can be called with :socket parameter; otherwise \*socket* will be used.
 
 Commands are sent with
@@ -39,9 +39,11 @@ Commands are sent with
 The expecting parameter, if specified, makes sure that the response in in 200-299 range (only first digit is checked).
 
 Responses are read with
-(read-unit) - read one line
-(read-list) - read lines terminated by ".^M" into a list
+
+- (read-unit) - read one line
+- (read-list) - read lines terminated by ".^M" into a list
 
 Lines are returned unprocessed, with control-M character.  Rationale: you will probably parse the lines anyway, so there is little reason to worry about that.
+
 
 TODO: installable parsers?
