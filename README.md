@@ -51,6 +51,7 @@ Lines are returned unprocessed, with control-M character.  Rationale: you will p
 4. (send-command ...) "MODE READER" is a good start.  If you send commands that return data, make sure to read everything up to and including the termination line containing a single dot.  See (read-list) for details.  If you don't you will get out of sync and send-command will not get a good response line.
 4. (disconnect) when done -- it sends "QUIT" and kills the socket.
 5. Write an news transport, a reader, a downloader, or anything that you are discouraged to do [in this article](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
+
 See:
 * 
 * [USOCKET API](http://quickdocs.org/usocket/api)
