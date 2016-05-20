@@ -1,9 +1,9 @@
 ;;;; trivial-nntp.asd
 
 (asdf:defsystem #:trivial-nntp
-  :description "Describe trivial-nntp here"
-  :author "Your Name <your.name@example.com>"
-  :license "Specify license here"
+  :description "Simple tools for interfacing to NNTP servers"
+  :author "Stacksmith <stack@apple2.x10.mx>"
+  :license "MIT"
   :depends-on (#:usocket)
   :serial t
   :components ((:file "package")
