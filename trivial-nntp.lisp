@@ -24,6 +24,11 @@
 	 :message message
 	 :id id))
 
+
+(defun socket-has-data (&key (socket *socket*))
+  "return T if reading will not block"
+  (listen (usocket:socket-stream *socket*)))
+
 ;;TODO: to avoid consing, try replacing read-line/string-right-trim
 ;; with something like stream-read-line, filtering off
 ;; 
@@ -79,7 +84,9 @@
 				 :user "" :password ""))
 
 (defun connect (&key (acct *acct*))
-  (setf *socket* (usocket:socket-connect (acct-server acct) (acct-port acct)))
+  (prog1
+      (setf *socket* (usocket:socket-connect (acct-server acct) (acct-port acct)))
+    (read-response :expecting 2))
   )
 
 (defun login (&key (acct *acct*))
