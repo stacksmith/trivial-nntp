@@ -29,8 +29,8 @@ This is a minimalistic effort; however watch this:
 
 The system uses several special variables to keep defaults which come in handy in interactive work:
 
-- *acct*    structure contains server name, address, username and password, defaults to a free server
-- *socket*  contains the usocket opened by most recent connect.
+- \*acct*    structure contains server name, address, username and password, defaults to a free server
+- \*socket*  contains the usocket opened by most recent connect.
 
 Most functions can be called with :socket parameter; otherwise \*socket* will be used.  To get a stream, use (usocket:socket-stream socket).
 
