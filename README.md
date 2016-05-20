@@ -38,7 +38,7 @@ Commands are sent with
     (send-command "commandstring" :expecting 2)
 The expecting parameter, if specified, makes sure that the response in in 200-299 range (only first digit is checked).
 
-Response are read with
+Responses are read with
 (read-unit) - read one line
 (read-list) - read lines terminated by ".^M" into a list
 
