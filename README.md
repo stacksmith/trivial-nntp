@@ -32,7 +32,7 @@ The system uses several special variables to keep defaults which come in handy i
     *acct*    structure contains server name, address, username and password
     *socket*  contains the usocket opened by most recent connect.
 ```
-Most functions can be called with :socket parameter; otherwise *socket* will be used.
+Most functions can be called with :socket parameter; otherwise \*socket* will be used.
 
 Commands are sent with
     (send-command "commandstring" :expecting 2)
