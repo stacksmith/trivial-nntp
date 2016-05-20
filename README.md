@@ -28,6 +28,7 @@ This is a minimalistic effort; however watch this:
     CL-USER>
 
 The system uses several special variables to keep defaults which come in handy in interactive work:
+```common-lisp
     *acct*    structure contains server name, address, username and password
     *socket*  contains the usocket opened by most recent connect.
 
