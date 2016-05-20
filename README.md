@@ -53,5 +53,7 @@ Lines are returned unprocessed, with control-M character.  Rationale: you will p
 5. Write an news transport, a reader, a downloader, or anything that you are discouraged to do [in this article](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
 
 See:
-* 
+* [Read This Before You Write a Newsreader, News Transport System, etc.](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
 * [USOCKET API](http://quickdocs.org/usocket/api)
+* [Free Usenet servers](http://www.freeusenetnews.com/)
+* [RFC 3977](https://tools.ietf.org/html/rfc3977#section-3.1.1)
