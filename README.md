@@ -31,7 +31,7 @@ The system uses several special variables to keep defaults which come in handy i
 ```common-lisp
     *acct*    structure contains server name, address, username and password
     *socket*  contains the usocket opened by most recent connect.
-
+```
 Most functions can be called with :socket parameter; otherwise *socket* will be used.
 
 Commands are sent with
