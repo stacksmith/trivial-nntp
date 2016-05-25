@@ -2,7 +2,7 @@
 
 (asdf:defsystem #:trivial-nntp
   :description "Simple tools for interfacing to NNTP servers"
-  :author "Stacksmith <stack@apple2.x10.mx>"
+  :author "Stacksmith <fpgasm@apple2.x10.mx>"
   :license "MIT"
   :depends-on (#:usocket)
   :serial t

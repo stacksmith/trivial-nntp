@@ -27,9 +27,9 @@
 
 (defun socket-has-data (&key (socket *socket*))
   "return T if reading will not block"
-  (listen (usocket:socket-stream *socket*)))
+  (listen (usocket:socket-stream socket)))
 
-;;TODO: to avoid consing, try replacing read-line/string-right-trim
+;;TODO: to avoid consing, try replacinag read-line/string-right-trim
 ;; with something like stream-read-line, filtering off
 ;; 
 (defun read-unit (&key (socket *socket*))
