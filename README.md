@@ -52,6 +52,9 @@ Lines are returned unprocessed, with control-M character.  Rationale: you will p
 4. (disconnect) when done -- it sends "QUIT" and kills the socket.
 5. Write an news transport, a reader, a downloader, or anything that you are discouraged to do [in this article](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
 
-See:
+References:
 * 
 * [USOCKET API](http://quickdocs.org/usocket/api)
+* [RFC 977: Network News Transfer Protocol (1986)](http://newsreaders.com/misc/twpierce/news/rfc977.html)
+* [RFC 1036: Standard for Interchange of USENET Messages (1987)](http://newsreaders.com/misc/twpierce/news/rfc1036.html)
+* [Don't Write a Newsreader (1995)](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
