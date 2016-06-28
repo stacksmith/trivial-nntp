@@ -21,8 +21,8 @@
 	       :sock (make-array 1 )
 	       :grp  (make-array 1 :element-type 'string :initial-element "alt.autos.camaro")))
 
-(defun socket (&optional (server *server*) (sindex 0))
-  (elt (server-sock server) sindex))
+(defmacro socket (&optional (server *server*) (sindex 0))
+  `(elt (server-sock ,server) ,sindex))
 
 (define-condition nntp-error (error)
   ((message
@@ -71,7 +71,7 @@
     (if expecting
 	(unless (eq code expecting) ;if checking for error
 	    (nntp-error code line)))
-    (values code line) ;return if ok
+    (values line code) ;return if ok
 ))
 ;;;
 ;;; Restore server connection and state
@@ -101,11 +101,11 @@
 (defun send-command (string &key (expecting nil) (server *server*) (sindex 0) (also nil))
   "send an NNTP command and read response. Return first digit of response and entire response string"
   (let ((command (if also ;; secondary command string
-		     (concatenate 'string " " also)
+		     (concatenate 'string string " " also)
 		     string)))
-    ;;(format t "SENDING [~A]~%" command)
+    (format t "SENDING [~A]~%" command)
     (handler-case
-	(let ((socket (elt (server-sock server) sindex)))
+	(let ((socket (socket server sindex)))
 	  (format (usocket:socket-stream socket) "~A~C~C" command #\return #\linefeed)
 	  (force-output (usocket:socket-stream socket))
 	  (read-response :expecting expecting :server server :sindex sindex))
@@ -127,9 +127,10 @@
 
 (defun disconnect (&key (server *server*) (sindex 0))
   "cleanly disconnect from the server"
-  (when (socket server sindex)
+  (if (socket server sindex)
     (multiple-value-prog1
 	(send-command "QUIT"  :server server :sindex sindex)
       (usocket:socket-close (socket server sindex))
-      (setf (elt (server-sock server) sindex) nil))))
+      (setf (elt (server-sock server) sindex) nil)))
+  )
 
