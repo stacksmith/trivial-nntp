@@ -53,13 +53,14 @@
       (values line ;(string-right-trim '(#\return) line) trim ^M from end
 	      end)))  )
 
-(defun read-list (&key (server *server*) (sindex 0))
+(defun read-list (&key (server *server*) (sindex 0) (proc #'(lambda (str) str)))
   "collect a list containing lines of data"
   (let ((retlist nil))
     (loop
        (multiple-value-bind (line done) (read-unit :server server :sindex sindex)
 	 (if done (return retlist))
-	 (push line retlist)))
+      
+	 (push (funcall proc line) retlist)))
     retlist))
 
 
