@@ -52,15 +52,16 @@
 	   (end (string= line *blank*)))
       (values line ;(string-right-trim '(#\return) line) trim ^M from end
 	      end)))  )
-
+;; read-list now has accepts a function :proc that converts strings to
+;; anything and puts them in a list
 (defun read-list (&key (server *server*) (sindex 0) (proc #'(lambda (str) str)))
   "collect a list containing lines of data"
   (let ((retlist nil))
     (loop
        (multiple-value-bind (line done) (read-unit :server server :sindex sindex)
 	 (if done (return retlist))
-      
-	 (push (funcall proc line) retlist)))
+	 (let ((item (funcall proc line)))
+	   (and item (push (funcall proc line) retlist)))))
     retlist))
 
 
