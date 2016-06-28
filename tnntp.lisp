@@ -15,8 +15,8 @@
 (defparameter *server*
   (make-server :name "news.mixmin.net"
 	       :port 119
-	       :user ""
-	       :password ""
+	       :user nil
+	       :password nil
 	       :sock-num 1
 	       :sock (make-array 1 )
 	       :grp  (make-array 1 :element-type 'string :initial-element "alt.autos.camaro")))
@@ -78,20 +78,29 @@
   (setf (elt (server-sock server) sindex)
 	(usocket:socket-connect (server-name server) (server-port server)
 				:timeout 5))
+  (read-response :expecting 2) ;eat the server initial signature
+  ; if account information present, authenticate
+  (when (server-user server)
+    (send-command (concatenate 'string "AUTHINFO USER "
+			       (server-user server)) :expecting 3)
+    (send-command (concatenate 'string "AUTHINFO PASS "
+			       (server-password server)) :expecting 2))
+
   ;(format t "1.RECONNECTED ~A~%" sindex)
   (when (elt (server-grp server) sindex)
       
     (multiple-value-bind (a b)
-	(send-command (with-output-to-string (out) (format out "GROUP ~A" (elt (server-grp server) sindex)))))
-    ;(read-response :expecting 2)
+	(send-command (with-output-to-string (out) (format out "GROUP ~A" (elt (server-grp server) sindex))) :server server :sindex sindex :expecting 2)
+      (format t "---~A ~A ~%" a b))
+    ;
       )
     
-  (format t "3.RECONNECTED ~A~%" sindex)
+ ; (format t "3.RECONNECTED ~A~%" sindex)
  
   )
 
 (defun send-command (string &key (expecting nil) (server *server*) (sindex 0))
- ; (format t "SEND-COMMAND ~A~%" string)
+  (format t "SEND-COMMAND ~A~%" string)
   "send an NNTP command and read response"
   (handler-case
       (let ((socket (elt (server-sock server) sindex)))
@@ -103,7 +112,7 @@
 ;      (format t "1.NIL socket~%")
       (reconnect :server server :sindex sindex)
   ;    (format t "1.AFTER reconnect~%")
-       (send-command string :expecting expecting :server server :sindex sindex))
+      (send-command string :expecting expecting :server server :sindex sindex))
     (usocket:socket-condition() (format t "SOCKET COND IN SEND-COMMAND"))
     (usocket:ns-try-again-condition ()
 ;      (format t "TRY-AGAIN-CONDITION~%")

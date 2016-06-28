@@ -28,7 +28,7 @@ This is a minimalistic effort; however watch this:
 
 At the core, the server structure contains information about the URL, port, authentication and connection state to a server.  The system will transparently reconnect and restore current group on a connection should the server close the connection.
 
-Multiple server connections are supported (via arrays of sockets and groups for each server).  A socket is selected by specifying server and socket index.  For defaults, *server* and socket index 0 are used.
+Multiple server connections are supported (via arrays of sockets and groups for each server).  A socket is selected by specifying server and socket index.  For defaults, \*server\* and socket index 0 are used.
 
 Commands are sent with
     (send-command "commandstring" :expecting 2 )
@@ -45,8 +45,8 @@ Lines are returned unprocessed, with control-M character.  Rationale: you will p
 
 1. Create a server structure with your server url, port and authentication info.
 2. (send-command ...) "MODE READER" is a good start.  If you send commands that return data, make sure to read everything up to and including the termination line containing a single dot.  See (read-list) for details.  If you don't you will get out of sync and send-command will not get a good response line.
-4. (disconnect) when done -- it sends "QUIT" and kills the sockets
-5. Write an news transport, a reader, a downloader, or anything that you are discouraged to do [in this article](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
+3. (disconnect) when done -- it sends "QUIT" and kills the sockets
+4. Write an news transport, a reader, a downloader, or anything that you are discouraged to do [in this article](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
 
 References:
 * 
