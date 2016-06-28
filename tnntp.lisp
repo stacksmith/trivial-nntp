@@ -20,7 +20,7 @@
 	       :sock-num 1
 	       :sock (make-array 1 )
 	       :grp  (make-array 1 :element-type 'string :initial-element "alt.autos.camaro")))
-
+;; socket is a macro to allow setf
 (defmacro socket (&optional (server *server*) (sindex 0))
   `(elt (server-sock ,server) ,sindex))
 
@@ -76,27 +76,25 @@
 ;;;
 ;;; Restore server connection and state
 (defun reconnect (&key (server *server*) (sindex 0))
-  (setf (elt (server-sock server) sindex)
+  
+  (setf (socket server sindex)
 	(usocket:socket-connect (server-name server) (server-port server)
 				:timeout 5))
   (read-response :expecting 2) ;eat the server initial signature
-  ; if account information present, authenticate
+  ;; if account information present, authenticate
   (when (server-user server)
     (send-command (concatenate 'string "AUTHINFO USER "
 			       (server-user server)) :expecting 3)
     (send-command (concatenate 'string "AUTHINFO PASS "
 			       (server-password server)) :expecting 2))
-
-  ;(format t "1.RECONNECTED ~A~%" sindex)
+;;(format t "1.RECONNECTED ~A~%" sindex)
+  ;; if old connection was in a group, re-enter group
   (when (elt (server-grp server) sindex)
-      
     (multiple-value-bind (digit response)
 	(send-command "GROUP" :also (elt (server-grp server) sindex) :server server :sindex sindex :expecting 2)
       (declare (ignore digit response))))
-    
- ; (format t "3.RECONNECTED ~A~%" sindex)
- 
-  )
+ ;; (format t "3.RECONNECTED ~A~%" sindex)
+ )
 
 (defun send-command (string &key (expecting nil) (server *server*) (sindex 0) (also nil))
   "send an NNTP command and read response. Return first digit of response and entire response string"
@@ -131,6 +129,6 @@
     (multiple-value-prog1
 	(send-command "QUIT"  :server server :sindex sindex)
       (usocket:socket-close (socket server sindex))
-      (setf (elt (server-sock server) sindex) nil)))
+      (setf (socket server sindex) nil)))
   )
 
