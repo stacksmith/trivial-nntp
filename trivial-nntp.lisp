@@ -29,17 +29,21 @@
   "return T if reading will not block"
   (listen (usocket:socket-stream socket)))
 
-;;TODO: to avoid consing, try replacinag read-line/string-right-trim
-;; with something like stream-read-line, filtering off
-;; 
+
+
+
 (defun read-unit (&key (socket *socket*))
   "return a unit (line) of text and nil if a good line"
-  (let* ((line (read-line (usocket:socket-stream socket)))
-	 (end (string= line *blank*)))
-    (values line ;(string-right-trim '(#\return) line) trim ^M from end
-	    end))
-  
-  )
+  ;; Non-UTF8 characters are skipped
+  (handler-bind ((sb-int:stream-decoding-error
+		  #'(lambda (ex) (declare (ignore ex))
+		      (invoke-restart 'sb-int:attempt-resync))))
+    
+    (let* ((line (read-line (usocket:socket-stream socket)))
+	   (end (string= line *blank*)))
+      (values line ;(string-right-trim '(#\return) line) trim ^M from end
+	      end)))  )
+
 (defun read-response (&key (expecting nil) (socket *socket*) )
   "return first digit of the code and the entire line"
   (let* ((line (read-unit :socket socket))
@@ -62,9 +66,15 @@
 
 (defun send-command (string &key (expecting nil) (socket *socket*))
   "send an NNTP command and read response"
-  (format (usocket:socket-stream socket) "~A~C~C" string #\return #\linefeed)
-  (force-output (usocket:socket-stream socket))
-  (read-response :expecting expecting))
+  (handler-case
+      (progn
+	(format (usocket:socket-stream socket) "~A~C~C" string #\return #\linefeed)
+	(force-output (usocket:socket-stream socket))
+	(read-response :expecting expecting))
+    (usocket:socket-condition() (format t "SOCKET COND IN SEND-COMMAND"))
+    (sb-int:simple-stream-error ()
+      (connect ))
+    ))
 
 (defun disconnect (&key (socket *socket*))
   "cleanly disconnect from the server"
@@ -105,5 +115,15 @@
 
 ;;(asdf:system-relative-pathname 'tnntp "test.txt" )
 
+
+
+(defmacro with-log (&body body)
+  `(with-open-file (out (asdf:system-relative-pathname 'trivial-nntp
+						      "log.txt" )
+		       :direction :output
+		       :if-does-not-exist :create
+		       :if-exists :append)
+    ,@body
+    ))
 
 
