@@ -26,6 +26,8 @@ Multiple server connections are supported (via arrays of sockets and groups for 
 Commands are sent with
     (send-command "commandstring" :expecting 2 )
 The expecting parameter, if specified, makes sure that the response in in 200-299 range (only first digit is checked).
+For commands with an additional parameter such as "GROUP groupname" the :also parameter avoids building command strings:
+    (send-command "GROUP" :also groupname) 
 
 Responses are read with
 

@@ -8,6 +8,6 @@
   :serial t
   :components ((:file "package")
                (:file "tnntp")
-	       ;(:file "group")
+	       (:file "group")
 	       ))
 

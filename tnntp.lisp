@@ -42,6 +42,7 @@
 (defun read-unit (&key (server *server*) (sindex 0))
   "return a unit (line) of text and nil if a good line"
   ;; Non-UTF8 characters are skipped
+  ;; This appears to be non-portable?
   (handler-bind ((sb-int:stream-decoding-error
 		  #'(lambda (ex) (declare (ignore ex))
 		      (invoke-restart 'sb-int:attempt-resync))))
@@ -89,39 +90,40 @@
   ;(format t "1.RECONNECTED ~A~%" sindex)
   (when (elt (server-grp server) sindex)
       
-    (multiple-value-bind (a b)
-	(send-command (with-output-to-string (out) (format out "GROUP ~A" (elt (server-grp server) sindex))) :server server :sindex sindex :expecting 2)
-      (format t "---~A ~A ~%" a b))
-    ;
-      )
+    (multiple-value-bind (digit response)
+	(send-command "GROUP" :also (elt (server-grp server) sindex) :server server :sindex sindex :expecting 2)
+      (declare (ignore digit response))))
     
  ; (format t "3.RECONNECTED ~A~%" sindex)
  
   )
 
-(defun send-command (string &key (expecting nil) (server *server*) (sindex 0))
-  (format t "SEND-COMMAND ~A~%" string)
-  "send an NNTP command and read response"
-  (handler-case
-      (let ((socket (elt (server-sock server) sindex)))
-	(format (usocket:socket-stream socket) "~A~C~C" string #\return #\linefeed)
-	(force-output (usocket:socket-stream socket))
-	(read-response :expecting expecting :server server :sindex sindex))
-    ;;nil socket
-    (simple-error ()
-;      (format t "1.NIL socket~%")
-      (reconnect :server server :sindex sindex)
-  ;    (format t "1.AFTER reconnect~%")
-      (send-command string :expecting expecting :server server :sindex sindex))
-    (usocket:socket-condition() (format t "SOCKET COND IN SEND-COMMAND"))
-    (usocket:ns-try-again-condition ()
-;      (format t "TRY-AGAIN-CONDITION~%")
-      (reconnect)
-      (send-command string :expecting expecting :server server :sindex sindex))
-    (sb-int:simple-stream-error ()
-      (reconnect )
-      (send-command string :expecting expecting :server server :sindex sindex))
-    ))
+(defun send-command (string &key (expecting nil) (server *server*) (sindex 0) (also nil))
+  "send an NNTP command and read response. Return first digit of response and entire response string"
+  (let ((command (if also ;; secondary command string
+		     (concatenate 'string " " also)
+		     string)))
+    ;;(format t "SENDING [~A]~%" command)
+    (handler-case
+	(let ((socket (elt (server-sock server) sindex)))
+	  (format (usocket:socket-stream socket) "~A~C~C" command #\return #\linefeed)
+	  (force-output (usocket:socket-stream socket))
+	  (read-response :expecting expecting :server server :sindex sindex))
+      ;;nil socket results in simple-error
+      (simple-error ()
+					;      (format t "1.NIL socket~%")
+	(reconnect :server server :sindex sindex)
+	(send-command command :expecting expecting :server server :sindex sindex))
+      (usocket:socket-condition() (format t "SOCKET COND IN SEND-COMMAND"))
+      (usocket:ns-try-again-condition ()
+					;      (format t "TRY-AGAIN-CONDITION~%")
+	(reconnect)
+	(send-command command :expecting expecting :server server :sindex sindex))
+					;???
+      (sb-int:simple-stream-error ()
+	(reconnect )
+	(send-command command :expecting expecting :server server :sindex sindex))
+      )))
 
 (defun disconnect (&key (server *server*) (sindex 0))
   "cleanly disconnect from the server"
