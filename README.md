@@ -28,7 +28,7 @@ This is a minimalistic effort; however watch this:
 
 At the core, the server structure contains information about the URL, port, authentication and connection state to a server.  The system will transparently reconnect and restore current group on a connection should the server close the connection.
 
-Multiple server connections are supported (via arrays of sockets and groups for each server).  A socket is selected by specifying server and socket index.  For defaults, \*server\* and socket index 0 are used.
+Multiple server connections are supported (via arrays of sockets and groups for each server).  A socket is selected by specifying server and socket index.  For defaults, \*server\* and socket index 0 are used; an open nntp server 'news.mixmin.net' is defaulted to.
 
 Commands are sent with
     (send-command "commandstring" :expecting 2 )
