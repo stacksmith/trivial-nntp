@@ -12,14 +12,7 @@ This is a minimalistic effort; however watch this:
      "  XPAT header message-ID|range pattern [pattern ...]^M" "  XOVER [range]^M"
      "  XHDR header [message-ID|range]^M" "  XGTITLE [wildmat]^M"
      "  STAT [message-ID|number]^M" "  STARTTLS^M" "  QUIT^M" "  POST^M"
-     "  OVER [range]^M" "  NEXT^M" "  NEWNEWS wildmat [yy]yymmdd hhmmss [GMT]^M"
-     "  NEWGROUPS [yy]yymmdd hhmmss [GMT]^M" "  MODE READER^M"
-     "  LISTGROUP [newsgroup [range]]^M"
-     "  LIST [ACTIVE [wildmat]|ACTIVE.TIMES [wildmat]|COUNTS [wildmat]|DISTRIB.PATS|DISTRIBUTIONS|HEADERS [MSGID|RANGE]|MODERATORS|MOTD|NEWSGROUPS [wildmat]|OVERVIEW.FMT|SUBSCRIPTIONS [wildmat]]^M"
-     "  LAST^M" "  IHAVE message-ID^M" "  HELP^M" "  HEAD [message-ID|number]^M"
-     "  HDR header [message-ID|range]^M" "  GROUP newsgroup^M" "  DATE^M"
-     "  CAPABILITIES [keyword]^M" "  BODY [message-ID|number]^M"
-     "  AUTHINFO USER name|PASS password|GENERIC program [argument ...]^M"
+     ...
      "  ARTICLE [message-ID|number]^M")
      CL-USER> (tnntp:disconnect)
     2
