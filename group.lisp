@@ -63,6 +63,7 @@
   )
 
 (defstruct xoverline num subject author date message-id references byte-count line-count )
+;; When parsing xoverlines, note that references may not be there (see the * instead of the +)!
 (defun string-to-xoverline (string)
   (multiple-value-bind (a b start end) 
       (cl-ppcre:scan "([\\d]+)\\t([^\\t]+)\\t([^\\t]+)\\t([^\\t]+)\\t([^\\t]+)\\t([^\\t]*)\\t([^\\t]+)\\t([^\\t])" string)
@@ -92,7 +93,12 @@
 	     ))
 
 
+
 (defun helper (groupname)
+  ;; load groups if needed
+  (unless *groups*
+    (setf *groups* (load-groups)))
+  ;; need extra information in group structure (min,max)
   (let ((grp (find-group groupname)))
     (when grp
       (send-command "GROUP" :also groupname)
