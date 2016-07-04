@@ -43,6 +43,12 @@ Lines are returned unprocessed, with control-M character.  Rationale: you will p
 3. (disconnect) when done -- it sends "QUIT" and kills the sockets
 4. Write an news transport, a reader, a downloader, or anything that you are discouraged to do [in this article](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
 
+*A SIMPLE EXAMPLE*
+    (load-groups)
+    (search-groups "book")
+
+Search the grouplist for anything containing the word 'book'; regex expressions allowed!
+
 References:
 * 
 * [USOCKET API](http://quickdocs.org/usocket/api)

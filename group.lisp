@@ -47,6 +47,12 @@
   "find a group struct by name"
   (find name *groups* :test #'(lambda (a b) (equal a (group-name b)))))
 
+(defun search-groups (name)
+  "search grouplist for a regex and return list"
+  (loop for group in *groups*
+     when (cl-ppcre:scan name (group-name group))
+     collect group))
+
 (defun sort-groups-by-count ()
   (sort *groups* (lambda (a b) (> (group-count a) (group-count b)) ))
   )
