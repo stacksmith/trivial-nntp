@@ -44,6 +44,7 @@ Lines are returned unprocessed, with control-M character.  Rationale: you will p
 4. Write an news transport, a reader, a downloader, or anything that you are discouraged to do [in this article](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
 
 *A SIMPLE EXAMPLE*
+
     (load-groups)
     (search-groups "book")
 
