@@ -30,17 +30,16 @@
 
 ;;; load groups into a list
 (defparameter *groups* nil;;(make-hash-table :test 'equal)
-  )
+)
 
-(defun read-groups (&key (server *server*) (sindex 0))
-  "from a server/socket, collect a list containing lines of data"
-  (read-list :server server :sindex sindex
-	     :proc #'string-to-group))
+(defun read-groups (connection)
+  "from a connection collect a list containing lines of data"
+  (read-list connection :proc #'string-to-group))
 
-(defun load-groups ()
+(defun load-groups (connection)
   "load groups from the server"
-  (send-command "LIST ACTIVE")
-  (setf *groups* (read-groups))
+  (send-command connection "LIST ACTIVE" :expecting 2)
+  (setf *groups* (read-groups connection))
 )
 
 (defun find-group (name)
@@ -57,14 +56,14 @@
   (sort *groups* (lambda (a b) (> (group-count a) (group-count b)) ))
   )
 
-(defun enter-group (groupname &key (server *server*) (sindex 0))
+(defun enter-group (connection groupname)
   "enter a group and retreive a list of article ids"
-  (send-command "LISTGROUP" :also groupname :expecting 2 :server server :sindex sindex)
+  (send-command connection "LISTGROUP" :also groupname :expecting 2)
   )
 
 
-(defun cmd-xover (grp)
-  (send-command 
+(defun cmd-xover (connection grp)
+  (send-command connection
    (with-output-to-string (out) (format out "XOVER ~d-~d" (group-low grp) (group-high grp))))
   )
 
@@ -93,22 +92,20 @@
 ))
 
 
-(defun read-xoverlines (&key (server *server*) (sindex 0))
-  (read-list :server server :sindex sindex
-	     :proc #'string-to-xoverline;(lambda (str) (string-to-xoverline str))
-	     ))
+(defun read-xoverlines (connection)
+  (read-list connection :proc #'string-to-xoverline))
 
 
 
-(defun helper (groupname)
+(defun helper (connection groupname)
   ;; load groups if needed
   (unless *groups*
-    (setf *groups* (load-groups)))
+    (setf *groups* (load-groups connection)))
   ;; need extra information in group structure (min,max)
   (let ((grp (find-group groupname)))
     (when grp
-      (send-command "GROUP" :also groupname)
-      (cmd-xover grp)
+      (send-command connection "GROUP" :also groupname)
+      (cmd-xover connection grp)
  )
 )
   )

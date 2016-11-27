@@ -4,7 +4,7 @@
   :description "Simple tools for interfacing to NNTP servers"
   :author "Stacksmith <fpgasm@apple2.x10.mx>"
   :license "MIT"
-  :depends-on (#:usocket #:cl-ppcre)
+  :depends-on (#:usocket #:cl+ssl #:cl-ppcre)
   :serial t
   :components ((:file "package")
                (:file "tnntp")
