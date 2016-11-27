@@ -22,9 +22,6 @@
 	 :message message
 	 :id id))
 
-;; server struct encapsulates a multi-socket connection to a server,
-;; the account information to log in, and state (group connection is in)
-
 ;;; A terminator line with a single period followed by return and lf (stripped)
 (defvar *blank* (with-output-to-string (out) (format out "~C~C"  #\period #\return )))
 
@@ -35,11 +32,12 @@
 	       :port 119
 	       :user nil
 	       :password nil
-	       :ssl t))
+	       :ssl nil))
 ;;;
 ;;; A connection is a socket for connecting with a server
 (defstruct connection server group fd stream)
 
+(defparameter *conn* (make-connection :server *server* :fd 0 :stream 0))
 ;;; Restore server connection and state
 (defun reconnect (connection)
   (with-slots (server group fd stream) connection
@@ -47,10 +45,11 @@
       (setf fd (usocket:socket-connect name port :timeout 5)
 	    stream (usocket:socket-stream fd))
       (when ssl
-	(print "ssl connection")
-        (print stream)
+;	(print "ssl connection")
+ ;;       (print stream)
 	(setf stream (cl+ssl:make-ssl-client-stream stream :external-format '(:iso-8859-1 :eol-style :lf)))
-	(print stream))
+;;	(print stream)
+)
       (read-response connection :expecting 2) ;eat the server initial signature
       ;; if account information present, authenticate
       (when user
@@ -113,8 +112,11 @@
 	  (force-output stream)
 	  (read-response connection :expecting expecting))
       ;;nil socket results in simple-error
+      (type-error ()
+	(reconnect connection)
+	(send-command connection command  :expecting expecting)
+	)
       (simple-error ()
-					;      (format t "1.NIL socket~%")
 	(reconnect connection)
 	(send-command connection command  :expecting expecting))
       (usocket:socket-condition() (format t "SOCKET COND IN SEND-COMMAND"))
@@ -135,7 +137,7 @@
     (with-slots (fd stream) connection
       (close stream)
       (usocket:socket-close fd)
-      (setf stream nil
-	    fd nil))
+      (setf stream 0
+	    fd 0))
   ))
 
