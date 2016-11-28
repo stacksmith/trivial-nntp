@@ -1,14 +1,23 @@
 ;; Interacting with groups
+ #|
+
+
+
+|#
 
 (in-package :trivial-nntp)
 
+;;;
+;;; A group structure, to keep track of a newsgroup on a server...
+;;;
 (defstruct group name high low )
 
 (defun group-count (group)
   "return count of messages in group"
   (- (group-high group) (group-low group) ))
+
 ;; In response to "LIST" command, the server sends
-;; groupname HIGH LOW y/n.
+;; groupname HIGH LOW y/n.  Minimum
 (defun string-to-group (string &key (minimum 10))
   "parse a single LIST response string into a group structure; specify minimum number of messages"
   (multiple-value-bind (a b start end)
@@ -21,25 +30,14 @@
 		:high high :low low)
 	  nil))))
 
-;; not using this one, just parse on the fly.n
-(defun strings-to-groups (list)
-  "Given a list response from LIST ACTIVE, create a list of group structs containing messages"
-  (loop for string in list
-       when (string-to-group string) collect it )
-  )
-
 ;;; load groups into a list
 (defparameter *groups* nil;;(make-hash-table :test 'equal)
 )
 
-(defun read-groups (connection)
-  "from a connection collect a list containing lines of data"
-  (read-list connection :proc #'string-to-group))
-
-(defun load-groups (connection)
-  "load groups from the server"
+(defun fetch-groups (connection)
+  "fetch all  groups from the server"
   (send-command connection "LIST ACTIVE" :expecting 2)
-  (setf *groups* (read-groups connection))
+  (setf *groups* (read-list connection :proc #'string-to-group))
 )
 
 (defun find-group (name)
@@ -56,11 +54,25 @@
   (sort *groups* (lambda (a b) (> (group-count a) (group-count b)) ))
   )
 
+
+(defun save-form (filename)
+  (with-open-file
+      (out (merge-pathnames filename (asdf:system-source-directory 'trivial-nntp)))
+    :direction :output
+    :if-exists :supersede
+    :if-does-not-exist :create
+    (write *groups* :stream out)))
+
+(defun load-form (filename)
+  (with-open-file
+      (in (merge-pathnames filename (asdf:system-source-directory 'trivial-nntp)))
+    :direction :input
+    (setf *groups* (read in))))
+
 (defun enter-group (connection groupname)
   "enter a group and retreive a list of article ids"
   (send-command connection "LISTGROUP" :also groupname :expecting 2)
   )
-
 
 (defun cmd-xover (connection grp)
   (send-command connection

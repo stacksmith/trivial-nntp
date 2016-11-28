@@ -34,54 +34,50 @@
 	       :password nil
 	       :ssl nil))
 ;;;
-;;; A connection is a socket for connecting with a server
-(defstruct connection server group fd stream)
+;;; A conn is a socket for connecting with a server
+(defstruct conn server group (stream 0) (bytes-read 0))
 
-(defparameter *conn* (make-connection :server *server* :fd 0 :stream 0))
-;;; Restore server connection and state
-(defun reconnect (connection)
-  (with-slots (server group fd stream) connection
+(defparameter *conn* (make-conn :server *server*))
+
+;;; Restore server conn and state
+(defun reconnect (conn)
+  (with-slots (server group stream) conn
     (with-slots (name port user password ssl) server
-      (setf fd (usocket:socket-connect name port :timeout 5)
-	    stream (usocket:socket-stream fd))
-      (when ssl
-;	(print "ssl connection")
- ;;       (print stream)
-	(setf stream (cl+ssl:make-ssl-client-stream stream :external-format '(:iso-8859-1 :eol-style :lf)))
-;;	(print stream)
-)
-      (read-response connection :expecting 2) ;eat the server initial signature
-      ;; if account information present, authenticate
-      (when user
-	(send-command connection "AUTHINFO USER" :also user :expecting 3)
-	(send-command connection "AUTHINFO PASS" :also password :expecting 2))
-      ;;(format t "1.RECONNECTED ~A~%" sindex)
-      ;; if old connection was in a group, re-enter group
-      (when group
-	(multiple-value-bind (digit response)
-	    (send-command connection "GROUP" :also group :expecting 2)
-	  (declare (ignore digit response)))))))
+      ;; For an unconnected socket, connect
+      (when (numberp stream)
+	(setf stream (usocket:socket-stream (usocket:socket-connect name port :timeout 5)))
+	(when ssl
+	  (setf stream (cl+ssl:make-ssl-client-stream
+			stream :external-format '(:iso-8859-1 :eol-style :lf))))
+	(read-response conn :expecting 2) ;eat the server initial signature
+	;; if account information present, authenticate
+	(when user
+	  (send-command conn "AUTHINFO USER" :also user :expecting 3)
+	  (send-command conn "AUTHINFO PASS" :also password :expecting 2))
+	;;(format t "1.RECONNECTED ~A~%" sindex)
+	;; if old conn was in a group, re-enter group
+	(when group
+	  (multiple-value-bind (digit response)
+	      (send-command conn "GROUP" :also group :expecting 2)
+	    (declare (ignore digit response))))))))
 
 
-
-(defun read-unit (connection)
+(defun read-unit (conn)
   "return a unit (line) of text and nil if a good line"
   ;; Non-UTF8 characters are skipped
   ;; This appears to be non-portable?
-  (handler-bind ((sb-int:stream-decoding-error
-		  #'(lambda (ex) (declare (ignore ex))
-		      (invoke-restart 'sb-int:attempt-resync))))
-    (let* ((line (read-line (connection-stream connection)))
-	   (end (string= line *blank*)))
-      (values line end)))  )
+  (let* ((line (read-line (conn-stream conn)))
+	 (end (string= line *blank*)))
+    (incf (conn-bytes-read conn) (length line))
+    (values line end))  )
 
 ;; read-list now has accepts a function :proc that converts strings to
 ;; anything and puts them in a list
-(defun read-list (connection &key(proc #'(lambda (str) str)))
+(defun read-list (conn &key(proc #'(lambda (str) str)))
   "collect a list containing lines of data"
   (let ((retlist nil))
     (loop
-       (multiple-value-bind (line done) (read-unit connection)
+       (multiple-value-bind (line done) (read-unit conn)
 	 (if done (return retlist))
 	 (let ((item (funcall proc line)))
 	   (and item (push (funcall proc line) retlist)))))
@@ -89,9 +85,9 @@
 
 
 
-(defun read-response (connection &key (expecting nil))
+(defun read-response (conn &key (expecting nil))
   "return first digit of the code and the entire line"
-  (let* ((line (read-unit connection))
+  (let* ((line (read-unit conn))
 	 (code (parse-integer (subseq line 0 1) :junk-allowed t)))
     (if expecting
 	(unless (eq code expecting) ;if checking for error
@@ -100,44 +96,53 @@
     ))
 ;;;
 
-(defun send-command (connection string &key (expecting nil) (also nil))
+(defun send-command (conn string &key (expecting nil) (also nil) (depth 0))
   "send an NNTP command and read response. Return first digit of response and entire response string"
+  (unless (zerop depth)
+    (format t "DEPTH: ~A~%" depth)
+    (if (> depth 3)
+	(quit)))
   (let ((command (if also ;; secondary command string
 		     (concatenate 'string string " " also)
 		     string)))
     (format t "SENDING [~A]~%" command)
     (handler-case
-	(with-slots (stream) connection
+	(with-slots (stream) conn
 	  (format stream "~A~C~C" command #\return #\linefeed)
 	  (force-output stream)
-	  (read-response connection :expecting expecting))
+	  (read-response conn :expecting expecting))
       ;;nil socket results in simple-error
       (type-error ()
-	(reconnect connection)
-	(send-command connection command  :expecting expecting)
+	(format t "TYPE-ERROR~%")
+	(reconnect conn)
+	(send-command conn command  :expecting expecting :depth (1+ depth))
 	)
       (simple-error ()
-	(reconnect connection)
-	(send-command connection command  :expecting expecting))
-      (usocket:socket-condition() (format t "SOCKET COND IN SEND-COMMAND"))
+	(format t "SIMPLE-ERROR~%")
+	(reconnect conn)
+	(send-command conn command  :expecting expecting) :depth (1+ depth))
+      (usocket:socket-condition() (format t "SOCKET COND IN SEND-COMMAND~%"))
       (usocket:ns-try-again-condition ()
-					;      (format t "TRY-AGAIN-CONDITION~%")
-	(reconnect connection)
-	(send-command connection command :expecting expecting))
+	(format t "TRY-AGAIN-CONDITION~%")
+	(reconnect conn)
+	(send-command conn command :expecting expecting :depth (1+ depth)))
       (sb-int:simple-stream-error ()
-	(reconnect connection )
-	(send-command connection command :expecting expecting))
+	(format t "SIMPLE STREAM_ERROR ~%")
+	(reconnect conn )
+	(send-command conn command :expecting expecting :depth (1+ depth)))
+      (stream-error ()
+	(format t "STREAM_ERROR ~%")
+	(reconnect conn )
+	(send-command conn command :expecting expecting :depth (1+ depth)))
       )))
 
-(defun disconnect (connection)
+(defun disconnect (conn)
   "cleanly disconnect from the server"
   
   (multiple-value-prog1
-      (send-command connection "QUIT")
-    (with-slots (fd stream) connection
+      (send-command conn "QUIT")
+    (with-slots (stream) conn
       (close stream)
-      (usocket:socket-close fd)
-      (setf stream 0
-	    fd 0))
+      (setf stream 0))
   ))
 
