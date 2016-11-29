@@ -5,18 +5,18 @@ This is a minimalistic effort; however watch this:
     
      CL-USER> (in-package :tnntp)
      TNNTP> (command "HELP")
-     1
      "100 Legal commands^M"
+     1
      TNNTP> (rlist)
+	 "  ARTICLE [message-ID|number]"
+	 "  AUTHINFO USER name|PASS password|GENERIC program [argument ...]"
+	 "  BODY [message-ID|number]" "  CAPABILITIES [keyword]"
+	 "  COMPRESS DEFLATE" "  DATE" "  GROUP newsgroup"
+	 "..."
      "Report problems to <usenet@fleegle.mixmin.net>.^M"
-     "  XPAT header message-ID|range pattern [pattern ...]^M" "  XOVER [range]^M"
-     "  XHDR header [message-ID|range]^M" "  XGTITLE [wildmat]^M"
-     "  STAT [message-ID|number]^M" "  STARTTLS^M" "  QUIT^M" "  POST^M"
-     ...
-     "  ARTICLE [message-ID|number]^M")
      TNNTP> (disconnect)
-    2
     "205 Bye!^M"
+    2
     CL-USER>
 
 This simple test connect to news.mixmin.net (see tnntp.lisp).  To connect to your server, create a server just like this (with your own info, of course):
