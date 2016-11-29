@@ -8,10 +8,10 @@ This is a minimalistic effort; however watch this:
      "100 Legal commands^M"
      1
      TNNTP> (rlist)
-     "  ARTICLE [message-ID|number]"
-     "  AUTHINFO USER name|PASS password|GENERIC program [argument ...]"
-     "  BODY [message-ID|number]" "  CAPABILITIES [keyword]"
-     "  COMPRESS DEFLATE" "  DATE" "  GROUP newsgroup"
+     "  ARTICLE [message-ID|number]^M"
+     "  AUTHINFO USER name|PASS password|GENERIC program [argument ...]^M"
+     "  BODY [message-ID|number]^M" "  CAPABILITIES [keyword]^M"
+     "  COMPRESS DEFLATE^M" "  DATE^M" "  GROUP newsgroup^M"
      "..."
      "Report problems to <usenet@fleegle.mixmin.net>.^M"
      TNNTP> (disconnect)
