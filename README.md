@@ -8,16 +8,16 @@ This is a minimalistic effort; however watch this:
      "100 Legal commands^M"
      1
      TNNTP> (rlist)
-	 "  ARTICLE [message-ID|number]"
-	 "  AUTHINFO USER name|PASS password|GENERIC program [argument ...]"
-	 "  BODY [message-ID|number]" "  CAPABILITIES [keyword]"
-	 "  COMPRESS DEFLATE" "  DATE" "  GROUP newsgroup"
-	 "..."
+     "  ARTICLE [message-ID|number]"
+     "  AUTHINFO USER name|PASS password|GENERIC program [argument ...]"
+     "  BODY [message-ID|number]" "  CAPABILITIES [keyword]"
+     "  COMPRESS DEFLATE" "  DATE" "  GROUP newsgroup"
+     "..."
      "Report problems to <usenet@fleegle.mixmin.net>.^M"
      TNNTP> (disconnect)
-    "205 Bye!^M"
-    2
-    CL-USER>
+     "205 Bye!^M"
+     2
+     CL-USER>
 
 This simple test connect to news.mixmin.net (see tnntp.lisp).  To connect to your server, create a server just like this (with your own info, of course):
 ```lisp
