@@ -1,4 +1,4 @@
-# trivial-nntp
+# :trivial-nntp (:tnntp)
 Common lisp tools for connecting to and crawling around NNTP servers.  It uses usocket and cl+ssl, and therefore handles simple or SSL-encrypted NNTP connections.
 
 This is a minimalistic effort; however watch this:
