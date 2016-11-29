@@ -2,7 +2,7 @@
 Common lisp tools for connecting to and crawling around NNTP servers.  It uses usocket and cl+ssl, and therefore handles simple or SSL-encrypted NNTP connections.
 
 This is a minimalistic effort; however watch this:
-    
+```
      CL-USER> (in-package :tnntp)
      TNNTP> (command "HELP")
      "100 Legal commands^M"
@@ -18,7 +18,7 @@ This is a minimalistic effort; however watch this:
      "205 Bye!^M"
      2
      CL-USER>
-
+```
 This simple test connect to news.mixmin.net (see tnntp.lisp).  To connect to your server, create a server just like this (with your own info, of course):
 ```lisp
 (defparameter *server* ;; or keep this in some other place...
