@@ -22,25 +22,44 @@
 	 :message message
 	 :id id))
 
-;;; A terminator line with a single period followed by return and lf (stripped)
-(defvar *blank* (with-output-to-string (out) (format out "~C~C"  #\period #\return )))
+(defun line-or-nil (line)
+  "return nil for NNTP endline"
+  (when line
+    (unless (and (= 2 (length line))
+		 (char= #\period (elt line 0))
+		 (char= #\return (elt line 1)))
+      line)))
 
-(defstruct server name port user password ssl)
+;; declare a printer for server
+(defstruct (server
+	     (:print-function (lambda (p s k)
+				(declare (ignore k))
+				(format s "<* SERVER ~A:~A *>"
+					(server-name p) (server-port p)))))
+  name port user password ssl groups)
 
 (defparameter *server*
   (make-server :name "news.mixmin.net"
 	       :port 119
 	       :user nil
 	       :password nil
-	       :ssl nil))
+	       :ssl nil
+	       ))
 ;;;
-;;; A conn is a socket for connecting with a server
+;;; A connection keeps track of its server, a stream  (which may be an
+;;; SSL stream), some statistics, and some representation of a group.
+;;;
+;;; A connection may time out and become disconnected; the system will transparently
+;;; reconnect as needed.  In order to do that, we keep track of the string representation
+;;; of the group associated with this connection.
 (defstruct conn server group (stream 0) (bytes-read 0))
 
 (defparameter *conn* (make-conn :server *server*))
 
 ;;; Restore server conn and state
-(defun reconnect (conn)
+(defun reconnect (&key (conn *conn*))
+  "Reconnect to the server, if disconnected, restoring state (entering a group).
+  This needs more work..."
   (with-slots (server group stream) conn
     (with-slots (name port user password ssl) server
       ;; For an unconnected socket, connect
@@ -49,45 +68,38 @@
 	(when ssl
 	  (setf stream (cl+ssl:make-ssl-client-stream
 			stream :external-format '(:iso-8859-1 :eol-style :lf))))
-	(read-response conn :expecting 2) ;eat the server initial signature
+	(response :conn conn :expecting 2) ;eat the server initial signature
 	;; if account information present, authenticate
 	(when user
-	  (send-command conn "AUTHINFO USER" :also user :expecting 3)
-	  (send-command conn "AUTHINFO PASS" :also password :expecting 2))
+	  (command "AUTHINFO USER" :conn conn :also user :expecting 3)
+	  (command "AUTHINFO PASS" :conn conn :also password :expecting 2))
 	;;(format t "1.RECONNECTED ~A~%" sindex)
-	;; if old conn was in a group, re-enter group
+	;; if old conn was in a group, re-enter group.  This may be not sensible
+	;; as it requires knowlege of group name...
 	(when group
 	  (multiple-value-bind (digit response)
-	      (send-command conn "GROUP" :also group :expecting 2)
+	      (command "GROUP" :conn conn :also group :expecting 2)
 	    (declare (ignore digit response))))))))
 
 
-(defun read-unit (conn)
-  "return a unit (line) of text and nil if a good line"
-  ;; Non-UTF8 characters are skipped
-  ;; This appears to be non-portable?
+(defun rline (&key (conn *conn*))
+  "return a unit (line) of text or nil for NNTP endline"
   (let* ((line (read-line (conn-stream conn)))
-	 (end (string= line *blank*)))
-    (incf (conn-bytes-read conn) (length line))
-    (values line end))  )
+	 (bytes (length line)))
+    (incf (conn-bytes-read conn) bytes)
+    (line-or-nil line)))
 
-;; read-list now has accepts a function :proc that converts strings to
+;; rlist now has accepts a function :proc that converts strings to
 ;; anything and puts them in a list
-(defun read-list (conn &key(proc #'(lambda (str) str)))
-  "collect a list containing lines of data"
-  (let ((retlist nil))
-    (loop
-       (multiple-value-bind (line done) (read-unit conn)
-	 (if done (return retlist))
-	 (let ((item (funcall proc line)))
-	   (and item (push (funcall proc line) retlist)))))
-    retlist))
+(defun rlist (&key (conn *conn*) (proc #'(lambda (str) str)))
+  "collect a list containing lines of data, processing if requested"
+  (loop for line = (rline :conn conn)
+     while line collect (funcall proc line)))
 
 
-
-(defun read-response (conn &key (expecting nil))
+(defun response (&key (conn *conn*)(expecting nil))
   "return first digit of the code and the entire line"
-  (let* ((line (read-unit conn))
+  (let* ((line (rline :conn conn))
 	 (code (parse-integer (subseq line 0 1) :junk-allowed t)))
     (if expecting
 	(unless (eq code expecting) ;if checking for error
@@ -96,51 +108,75 @@
     ))
 ;;;
 
-(defun send-command (conn string &key (expecting nil) (also nil) (depth 0))
-  "send an NNTP command and read response. Return first digit of response and entire response string"
+(defun range (low high &key (stream nil))
+  "output an NNTP article range to stream."
+  (if (and low high) (format stream "~A-~A" low high)
+      (if low (format stream "~A-" low)
+	  (if high (format stream "-~A" high)
+	      (format stream "")))))
+
+
+(defun command (string &key (conn *conn*)
+			 (expecting nil)
+			 (also "")
+			 (also2 "")
+			 (depth 0))
+  "send an NNTP command and read response. Return first digit of response and entire response string.
+- (commnad \"XOVER\" :also (range 1 10))
+- (command \"GROUP\" :also \"alt.blah.blah.blah\""
   (unless (zerop depth)
     (format t "DEPTH: ~A~%" depth)
     (if (> depth 3)
-	(quit)))
-  (let ((command (if also ;; secondary command string
-		     (concatenate 'string string " " also)
-		     string)))
-    (format t "SENDING [~A]~%" command)
-    (handler-case
-	(with-slots (stream) conn
-	  (format stream "~A~C~C" command #\return #\linefeed)
-	  (force-output stream)
-	  (read-response conn :expecting expecting))
-      ;;nil socket results in simple-error
-      (type-error ()
-	(format t "TYPE-ERROR~%")
-	(reconnect conn)
-	(send-command conn command  :expecting expecting :depth (1+ depth))
-	)
-      (simple-error ()
-	(format t "SIMPLE-ERROR~%")
-	(reconnect conn)
-	(send-command conn command  :expecting expecting) :depth (1+ depth))
-      (usocket:socket-condition() (format t "SOCKET COND IN SEND-COMMAND~%"))
-      (usocket:ns-try-again-condition ()
-	(format t "TRY-AGAIN-CONDITION~%")
-	(reconnect conn)
-	(send-command conn command :expecting expecting :depth (1+ depth)))
-      (sb-int:simple-stream-error ()
-	(format t "SIMPLE STREAM_ERROR ~%")
-	(reconnect conn )
-	(send-command conn command :expecting expecting :depth (1+ depth)))
-      (stream-error ()
-	(format t "STREAM_ERROR ~%")
-	(reconnect conn )
-	(send-command conn command :expecting expecting :depth (1+ depth)))
-      )))
+	(blarghbarf)));;TODO: catch the problem cases and handle them...
+  (handler-case
+      
+      (with-slots (stream) conn
+	(format t "~A ~A ~A~C~C" string also also2 #\return #\linefeed)
 
-(defun disconnect (conn)
+	(format stream "~A ~A ~A~C~C" string also also2 #\return #\linefeed)
+	(force-output stream)
+	(response :conn conn :expecting expecting))
+    ;;nil socket results in simple-error
+    (type-error ()
+      (format t "TYPE-ERROR~%")
+      (reconnect :conn conn)
+      (command string :conn conn :also also :also2 also2
+		    :expecting expecting :depth (1+ depth)))
+    (simple-error ()
+      (format t "SIMPLE-ERROR~%")
+      (reconnect :conn conn)
+      (command string :conn conn :also also :also2 also2
+		    :expecting expecting :depth (1+ depth)))
+    (usocket:socket-condition() (format t "SOCKET COND IN COMMAND~%"))
+    (usocket:ns-try-again-condition ()
+      (format t "TRY-AGAIN-CONDITION~%")
+      (reconnect :conn conn)
+      (command string :conn conn :also also :also2 also2
+		    :expecting expecting :depth (1+ depth))
+      )
+    (sb-int:simple-stream-error ()
+      (format t "SIMPLE STREAM_ERROR ~%")
+      (reconnect :conn conn )
+      (command string :conn conn :also also :also2 also2
+		    :expecting expecting :depth (1+ depth))
+      )
+    (stream-error ()
+      (format t "STREAM_ERROR ~%")
+      (reconnect :conn conn )
+      (command string :conn conn  :also also :also2 also2
+	       :expecting expecting :depth (1+ depth)))
+    (cl+ssl::ssl-error ()
+      (format t "CL+SSL::SSL-ERROR ~%") ;; on timed-out socket?
+      (setf (conn-stream conn) 0)
+      (reconnect :conn conn )
+      (command string :conn conn  :also also :also2 also2
+	       :expecting expecting :depth (1+ depth)))))
+
+(defun disconnect (&key (conn *conn*))
   "cleanly disconnect from the server"
   
   (multiple-value-prog1
-      (send-command conn "QUIT")
+      (command "QUIT" :conn conn )
     (with-slots (stream) conn
       (close stream)
       (setf stream 0))

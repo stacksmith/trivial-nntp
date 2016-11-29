@@ -4,10 +4,10 @@ Common lisp tools for connecting to and crawling around NNTP servers.  It uses u
 This is a minimalistic effort; however watch this:
     
      CL-USER> (in-package :tnntp)
-     TNNTP> (send-command *conn* "HELP")
+     TNNTP> (command "HELP")
      1
      "100 Legal commands^M"
-     TNNTP> (read-list *conn*)
+     TNNTP> (rlist)
      "Report problems to <usenet@fleegle.mixmin.net>.^M"
      "  XPAT header message-ID|range pattern [pattern ...]^M" "  XOVER [range]^M"
      "  XHDR header [message-ID|range]^M" "  XGTITLE [wildmat]^M"
@@ -19,19 +19,31 @@ This is a minimalistic effort; however watch this:
     "205 Bye!^M"
     CL-USER>
 
+This simple test connect to news.mixmin.net (see tnntp.lisp).  To connect to your server, create a server just like this (with your own info, of course):
+```lisp
+(defparameter *server* ;; or keep this in some other place...
+  (make-server :name "news.mixmin.net"
+	       :port 119
+	       :user nil
+	       :password nil
+	       :ssl nil
+	       )
+(defparameter *conn* ;; or create an array of connections or whatever
+  (make-conn :server *server* :group "alt.whatever")
+```
+
 At the core, the server structure (see 'tnntp.lisp') contains information about the URL, port, authentication.  A connection keeps track of the socket/stream state.  The system will transparently reconnect and restore current group on a connection should the server close the connection.
 
-
-Commands are sent with
-    (send-command connection "commandstring" :expecting 2 )
+Commands are sent with something like 
+    (command connection "commandstring" :expecting 2 )
 The expecting parameter, if specified, makes sure that the response in in 200-299 range (only first digit is checked).
 For commands with an additional parameter such as "GROUP groupname" the :also parameter avoids building command strings:
     (send-command "GROUP" :also groupname) 
 
 Responses are read with
 
-- (read-unit) - read one line
-- (read-list) - read lines terminated by ".^M" into a list
+- (rline) - read one line
+- (rlist) - read lines terminated by ".^M" into a list; optionally process with :proc.
 
 Lines are returned unprocessed, with control-M character.  Rationale: you will probably parse the lines anyway, so there is little reason to worry about that.
 
@@ -39,7 +51,7 @@ Lines are returned unprocessed, with control-M character.  Rationale: you will p
 
 1. Create a server structure with your server url, port and authentication info.
 2. Create a connection structure with the server.
-3. (send-command connection ...) "MODE READER" is a good start.  If you send commands that return data, make sure to read everything up to and including the termination line containing a single dot.  See (read-list) for details.  If you don't you will get out of sync and send-command will not get a good response line.
+3. (command ...) "MODE READER" is a good start.  If you send commands that return data, make sure to read everything up to and including the termination line containing a single dot.  See (rlist) for details.  If you don't you will get out of sync and send-command will not get a good response line.
 4. (disconnect) when done -- it sends "QUIT" and kills the sockets
 5. Write a news transport, a reader, a downloader, or anything that you are discouraged to do [in this article](http://newsreaders.com/misc/twpierce/news/newsreader-manifesto.html)
 
