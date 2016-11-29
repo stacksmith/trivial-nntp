@@ -18,11 +18,13 @@
 	   :server-user
 	   :server-password
 	   :server-ssl
+	   :server-groups
 	   :name
 	   :port
 	   :user
 	   :password
 	   :ssl
+	   :groups
 	   :conn
 	   :make-conn
 	   :conn-server
