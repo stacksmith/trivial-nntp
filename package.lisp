@@ -3,7 +3,9 @@
 (defpackage #:trivial-nntp
   (:nicknames :tnntp)
   (:use #:cl)
-  (:export :connect
+  (:export :*server*
+	   :*conn*
+	   :connect
 	   :disconnect
 	   :command
 	   :range
