@@ -36,15 +36,11 @@
 				(declare (ignore k))
 				(format s "<* SERVER ~A:~A *>"
 					(server-name p) (server-port p)))))
-  name port user password ssl groups)
+  name (port 119)
+  user password ssl groups (maxconns 1))
 
 (defparameter *server*
-  (make-server :name "news.mixmin.net"
-	       :port 119
-	       :user nil
-	       :password nil
-	       :ssl nil
-	       ))
+  (make-server :name "news.mixmin.net"   :port 119 ))
 ;;;
 ;;; A connection keeps track of its server, a stream  (which may be an
 ;;; SSL stream), some statistics, and some representation of a group.
